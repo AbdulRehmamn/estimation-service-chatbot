@@ -36,6 +36,8 @@ class ConversationState:
         self.plans_available: Optional[str] = None
         self.drawing_sheets: Optional[str] = None
         self.drawing_format: Optional[str] = None
+        self.specifications_volume: Optional[str] = None
+        self.addenda_count: Optional[str] = None
         self.bid_due_date: Optional[str] = None
         self.turnaround_required: Optional[str] = None
         self.special_requirements: List[str] = []
@@ -140,6 +142,8 @@ class ConversationState:
             "plans_available": self.plans_available,
             "drawing_sheets": self.drawing_sheets,
             "drawing_format": self.drawing_format,
+            "specifications_volume": self.specifications_volume,
+            "addenda_count": self.addenda_count,
             "bid_due_date": self.bid_due_date,
             "turnaround_required": self.turnaround_required,
             "special_requirements": self.special_requirements,
@@ -162,8 +166,8 @@ class ConversationState:
         for k in [
             "name", "company", "email", "phone", "project_type", "project_location",
             "square_footage", "construction_stage", "project_scope", "estimate_type",
-            "plans_available", "drawing_sheets", "drawing_format", "bid_due_date",
-            "turnaround_required", "proposal_requested"
+            "plans_available", "drawing_sheets", "drawing_format", "specifications_volume",
+            "addenda_count", "bid_due_date", "turnaround_required", "proposal_requested"
         ]:
             if k in data and data[k] is not None:
                 setattr(instance, k, data[k])

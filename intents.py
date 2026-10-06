@@ -35,6 +35,46 @@ INTENT_PATTERNS: Dict[str, List[Tuple[str, float]]] = {
         ("per square foot cost", 2.5),
         ("cost to estimate", 2.5)
     ],
+    "ballpark_pricing": [
+        ("ballpark price", 4.0),
+        ("ballpark", 3.5),
+        ("ball park", 3.0),
+        ("roughly how much will this cost", 4.0),
+        ("roughly how much", 3.5),
+        ("what should i budget for your estimating service", 4.0),
+        ("what should i budget", 3.5),
+        ("budget for your estimating", 3.5),
+        ("approximately what will you charge", 4.0),
+        ("approximate quote", 3.5),
+        ("give me a rough idea of the cost", 4.0),
+        ("rough idea of the cost", 3.5),
+        ("rough idea", 2.8),
+        ("how much would you charge for this project", 4.0),
+        ("how much for a project like this", 4.0),
+        ("rough quote", 3.5),
+        ("ballpark estimate", 3.5),
+        ("rough ballpark", 3.5),
+        ("ballpark cost", 3.5)
+    ],
+    "hourly_rate": [
+        ("what is your hourly rate", 4.0),
+        ("what's your hourly rate", 4.0),
+        ("what is your hourly", 3.8),
+        ("what's your hourly", 3.8),
+        ("hourly rate", 3.5),
+        ("rate per hour", 3.5),
+        ("how much per hour", 3.5),
+        ("per hour rate", 3.5),
+        ("per hour", 2.5)
+    ],
+    "construction_cost_inquiry": [
+        ("how much will my building cost", 4.0),
+        ("how much will it cost to build", 4.0),
+        ("how much to build", 3.5),
+        ("cost to build", 3.5),
+        ("total construction cost", 3.5),
+        ("construction cost of the project", 4.0)
+    ],
     "turnaround_time": [
         ("how long does an estimate take", 3.0),
         ("what is your turnaround time", 3.0),
@@ -363,7 +403,21 @@ INTENT_PATTERNS: Dict[str, List[Tuple[str, float]]] = {
         ("where is your office", 3.5),
         ("what is your address", 3.5),
         ("where are you based", 3.5),
-        ("head office", 3.0),
+        ("where you based off", 4.0),
+        ("where are you based off", 4.0),
+        ("where you based", 3.5),
+        ("where are you based out of", 4.0),
+        ("based off", 3.5),
+        ("based out of", 3.5),
+        ("where your headoffice is", 4.0),
+        ("where is your headoffice", 4.0),
+        ("where your head office is", 4.0),
+        ("where is your head office", 4.0),
+        ("headoffice", 3.5),
+        ("head office", 3.5),
+        ("headquarters", 3.5),
+        ("where is your headquarters", 4.0),
+        ("main office", 3.5),
         ("office location", 3.0),
         ("your location", 3.0),
         ("edison", 2.5),
@@ -504,6 +558,7 @@ class IntentDetector:
 
         # 6. Trades Detected (list)
         trade_keywords = {
+            "MEP Trades (Mechanical, Electrical, Plumbing)": ["mep", "all mep", "all mep trades", "mep trades", "mechanical electrical plumbing", "mechanical, electrical, plumbing"],
             "Electrical": ["electrical", "electric", "lighting", "low voltage", "switchgear", "fire alarm", "power distribution"],
             "HVAC / Mechanical": ["hvac", "mechanical", "heating", "cooling", "air conditioning", "ventilation", "ductwork", "exhaust"],
             "Plumbing": ["plumbing", "piping", "sanitary", "domestic water", "storm drain", "sewer", "water supply"],
@@ -555,9 +610,25 @@ class IntentDetector:
             entities["plans_available"] = "No / In Progress"
 
         # 9. Number of Sheets
-        sheets_match = re.search(r'(\b\d+)\s*(?:drawing\s*sheets|sheets|pages|drawings|prints)\b', cleaned_lower)
+        sheets_match = re.search(r'(\b\d+)\s*(?:drawing\s*sheets|sheets|drawings|prints)\b', cleaned_lower)
+        if not sheets_match:
+            sheets_match = re.search(r'(?:drawings?|sheets?)\s*[:=]?\s*(\b\d+)\b', cleaned_lower)
         if sheets_match:
             entities["drawing_sheets"] = f"{sheets_match.group(1)} sheets"
+
+        # 9b. Specification Pages
+        specs_match = re.search(r'(\b\d+)\s*(?:pages\s*(?:of\s*)?spec|spec(?:ification)?\s*pages|pages\s*spec)\b', cleaned_lower)
+        if not specs_match:
+            specs_match = re.search(r'(?:specifications?|specs?)\s*[:=]?\s*(\b\d+)\s*(?:pages)?\b', cleaned_lower)
+        if specs_match:
+            entities["specifications_volume"] = f"{specs_match.group(1)} pages"
+
+        # 9c. Addenda Count
+        addenda_match = re.search(r'(?:addenda|addendums?)\s*[:=]?\s*(\b\d+)\b', cleaned_lower)
+        if not addenda_match:
+            addenda_match = re.search(r'(\b\d+)\s*(?:addenda|addendums)\b', cleaned_lower)
+        if addenda_match:
+            entities["addenda_count"] = f"{addenda_match.group(1)} addenda"
 
         # 10. Bid Due Date / Deadline
         deadline_match = re.search(r'(?:bid\s*(?:due|deadline)|due\s*(?:on|by|date)?)\s*[:=]?\s*([a-zA-Z0-9\s/,-]+(?:\b202\d|\bnext\s*week|\bfriday|\bmonday|\btomorrow|\bsoon))', cleaned_lower)

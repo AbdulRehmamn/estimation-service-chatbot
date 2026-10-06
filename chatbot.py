@@ -10,6 +10,12 @@ from intents import intent_detector
 from conversation import ConversationState
 from estimator_knowledge import estimator_kb
 from lead_manager import lead_manager
+from ballpark_calculator import (
+    calculate_ballpark, parse_numeric_sqft, parse_sheet_count,
+    parse_spec_pages, parse_addenda_count, is_construction_cost_query,
+    estimate_project_effort, format_structured_ballpark,
+    HOURLY_MIN, HOURLY_MAX
+)
 
 
 class EstimatorChatbot:
@@ -89,6 +95,29 @@ class EstimatorChatbot:
             if "what trades" not in raw_text.lower() and "what do you" not in raw_text.lower():
                 return self._handle_unlisted_trade(raw_text, state)
 
+        # Check for physical construction project cost vs estimating service fee (Rule 16)
+        if intent == "construction_cost_inquiry" or is_construction_cost_query(raw_text):
+            return self._handle_construction_cost_vs_fee()
+
+        # Check for hourly rate inquiry (Section 1)
+        if intent == "hourly_rate" or any(h in raw_text.lower() for h in ["hourly rate", "rate per hour", "how much per hour", "what is your hourly", "what's your hourly"]):
+            return self._handle_hourly_rate(state)
+
+        # Check for ballpark pricing inquiry (Sections 2–5, 11–14, 17)
+        ballpark_triggers = [
+            "ballpark", "ball park", "roughly how much", "rough idea", "budget for your estimating",
+            "approximately what will you charge", "approximate quote", "how much would you charge",
+            "how much for a project like this", "rough quote", "ballpark quote", "what should i budget",
+            "how much for an estimate", "approximate cost"
+        ]
+        has_ballpark_keyword = any(b in raw_text.lower() for b in ballpark_triggers)
+        has_project_specs = any(header in raw_text.lower() for header in ["project:", "size:", "drawings:"])
+        sqft_val = parse_numeric_sqft(state.square_footage)
+        has_size_and_scope_ask = bool((state.square_footage or sqft_val) and (state.trades or any(k in raw_text.lower() for k in ["mep", "electrical", "plumbing", "hvac", "drywall"])) and any(w in raw_text.lower() for w in ["how much", "estimates", "need", "cost", "quote"]))
+
+        if intent == "ballpark_pricing" or has_ballpark_keyword or has_project_specs or has_size_and_scope_ask:
+            return self._handle_ballpark_pricing(raw_text, state, newly_updated)
+
         # Check out-of-the-box construction questions (BIM, permits, inflation/escalation, bonds, prevailing wage, etc.)
         oob_answer = self._resolve_out_of_box_query(raw_text)
         if oob_answer and (intent not in ["turnaround_time", "services", "trades", "drafting", "stamping", "scheduling", "value_engineering"] or any(k in raw_text.lower() for k in ["inflation", "escalation", "price spike", "price fluctuation", "bim", "revit", "permit", "bid bond", "surety", "prevailing wage"])):
@@ -155,7 +184,15 @@ class EstimatorChatbot:
             return self._handle_tools(state)
 
         # 11. COMPANY LOCATION & COVERAGE
-        if intent == "company_location" or any(l in raw_text.lower() for l in ["where are you located", "where is your office", "where are you based", "your address", "edison", "15 york drive", "where are you guys"]):
+        location_triggers = [
+            "where are you located", "where is your office", "where are you based",
+            "where you based", "where you based off", "where are you based off",
+            "based off", "based out of", "where your headoffice is", "where is your headoffice",
+            "where your head office is", "where is your head office", "headoffice", "head office",
+            "headquarters", "where is your headquarters", "main office", "your address",
+            "edison", "15 york drive", "where are you guys"
+        ]
+        if intent == "company_location" or any(l in raw_text.lower() for l in location_triggers):
             return self._handle_company_location(state)
 
         # 12. FAQ (Accuracy, Deliverables, Payment, CSI, Samples)
@@ -229,6 +266,135 @@ class EstimatorChatbot:
             "Residential project"
         ]
         return response, quick_replies, "pricing"
+
+    def _handle_construction_cost_vs_fee(self) -> Tuple[str, List[str], str]:
+        # Enforce Rule 16: Do not confuse construction project cost with estimating service fee
+        response = (
+            "Are you asking about the estimated construction cost of the project, "
+            "or the fee for our estimating service?"
+        )
+        quick_replies = [
+            "Fee for estimating service",
+            "Estimated construction cost",
+            "Upload plans for review"
+        ]
+        return response, quick_replies, "cost_distinction"
+
+    def _handle_hourly_rate(self, state: ConversationState) -> Tuple[str, List[str], str]:
+        # Preferred response from Section 1
+        response = (
+            f"Our estimating services typically range from **${HOURLY_MIN}–${HOURLY_MAX} per hour**. "
+            "The total cost depends on the project's size, complexity, number of drawings, trades, specifications, and scope.\n\n"
+            "If you can share your project type, approximate square footage, trades required, and drawing count, "
+            "I can give you a tailored ballpark estimate. For a formal proposal, you can also share your plans with us."
+        )
+        quick_replies = [
+            "Give me a ballpark estimate",
+            "Upload Plans",
+            "What's your turnaround time?",
+            "What trades do you estimate?"
+        ]
+        return response, quick_replies, "hourly_rate"
+
+    def _handle_ballpark_pricing(self, raw_text: str, state: ConversationState, newly_updated: List[str]) -> Tuple[str, List[str], str]:
+        # Extract any specific parameters from text or state
+        sqft = parse_numeric_sqft(state.square_footage)
+        sheets = parse_sheet_count(state.drawing_sheets or raw_text)
+        specs = parse_spec_pages(state.specifications_volume or raw_text)
+        addenda = parse_addenda_count(state.addenda_count or raw_text)
+        txt_lower = raw_text.lower()
+
+        # Scenario 1: Contractor provided very little information (Section 12)
+        if not state.square_footage and not state.trades and not state.drawing_sheets and not state.project_type and not sqft and not sheets:
+            response = (
+                f"Our estimating rate is generally **${HOURLY_MIN}–${HOURLY_MAX}/hour**. "
+                "The total depends on the project scope and complexity. "
+                "If you give me the project type, approximate square footage, trades required, and drawing count, "
+                "I can give you a rough ballpark. For an accurate proposal, you can also send us the plans."
+            )
+            quick_replies = [
+                "Commercial project",
+                "Residential project",
+                "Single-trade takeoff",
+                "Upload Plans"
+            ]
+            return response, quick_replies, "ballpark_incomplete"
+
+        # Scenario 2: Contractor ONLY provided square footage (Section 13)
+        if (state.square_footage or sqft) and not state.trades and not state.drawing_sheets and not sheets and not ("drawings" in txt_lower or "specs" in txt_lower):
+            size_mention = state.square_footage or f"{sqft:,} SF"
+            response = (
+                f"Thanks! The {size_mention} size gives me a starting point, but estimating effort also depends heavily "
+                "on the project type, number of trades, drawing count, and specifications. "
+                "If you tell me which trades you need and approximately how many drawing sheets you have, "
+                "I can give you a better ballpark."
+            )
+            quick_replies = [
+                "Electrical & Plumbing",
+                "All MEP Trades",
+                "Drywall / Framing",
+                "Full General Scope"
+            ]
+            return response, quick_replies, "ballpark_sqft_only"
+
+        # Scenario 3: Calculate dynamic effort and ballpark
+        effort = estimate_project_effort(
+            state.project_type,
+            sqft,
+            state.trades,
+            sheets,
+            specs,
+            addenda,
+            raw_text
+        )
+        ballpark = calculate_ballpark(effort["hours_min"], effort["hours_max"])
+
+        # Example 1: Small single-trade project (Section 11, Example 1)
+        if effort["complexity"] == "Small / Single-Trade":
+            trade_name = state.trades[0] if state.trades else "single-trade"
+            response = (
+                f"For a project of this size and a single-trade {trade_name} takeoff, I'd expect the work to be relatively straightforward. "
+                f"A rough estimate could be around {ballpark['hours_str']}. "
+                f"At ${HOURLY_MIN}–${HOURLY_MAX}/hour, that puts the ballpark around **{ballpark['range_str']}**. "
+                "The final cost would depend on the drawings and scope."
+            )
+        # Example 2: Normal project 40,000 SF electrical & plumbing (Section 11, Example 2)
+        elif effort["complexity"] == "Normal / 2-Trade Commercial":
+            size_disp = state.square_footage or "40,000 SF"
+            trades_disp = " and ".join(state.trades) if state.trades else "requested trades"
+            response = (
+                f"For a {size_disp} commercial project covering {trades_disp}, I'd roughly expect around {ballpark['hours_str']} "
+                f"depending on the drawing and specification volume. At ${HOURLY_MIN}–${HOURLY_MAX}/hour, the ballpark would be approximately **{ballpark['range_str']}**. "
+                "Once we review the plans, we can confirm the exact scope, price, and turnaround."
+            )
+        # Example 3: Large project 150,000 SF all MEP (Section 11, Example 3)
+        elif effort["complexity"] == "Large Multi-Trade MEP":
+            size_disp = state.square_footage or "150,000 SF"
+            response = (
+                f"For a {size_disp} commercial project involving multiple MEP trades, the estimating effort could be substantially larger. "
+                f"A preliminary range might be around {ballpark['hours_str']}. At ${HOURLY_MIN}–${HOURLY_MAX}/hour, that would put the ballpark around **{ballpark['range_str']}**. "
+                f"The turnaround could be {effort['turnaround']}, depending on the number of drawings, specifications, addenda, and overall complexity.\n\n"
+                "If you send us the plan set, we can review it and provide a more accurate proposal."
+            )
+        # Example 4: Multi-detail breakdown (Section 14)
+        elif "drawings:" in txt_lower or "specifications:" in txt_lower or (sheets and sheets >= 100):
+            response = (
+                f"Based on the project information you've provided, I'd estimate approximately **{ballpark['hours_str']}** for the requested scope. "
+                f"At our ${HOURLY_MIN}–${HOURLY_MAX}/hour rate, the ballpark would be approximately **{ballpark['range_str']}**. "
+                f"Based on the drawing/specification volume and number of trades, I'd expect {effort['turnaround']}. "
+                "This is a preliminary ballpark; the final proposal would be confirmed after reviewing the actual plans."
+            )
+        else:
+            # Section 17 Structured Format
+            response = format_structured_ballpark(state, effort, ballpark)
+
+        quick_replies = [
+            "Upload Plans",
+            "Request Proposal",
+            "Turnaround Time",
+            "What tools do you use?"
+        ]
+        return response, quick_replies, "ballpark_pricing"
 
     def _handle_turnaround(self, state: ConversationState) -> Tuple[str, List[str], str]:
         # Enforce Rule 3, 4: 2-3 business days standard, timeline confirmed after plans
@@ -422,6 +588,17 @@ class EstimatorChatbot:
 
     def _handle_entity_followup(self, state: ConversationState, newly_updated: List[str]) -> Tuple[str, List[str], str]:
         """Smart follow-up logic: acknowledges what was extracted and asks only logical missing details."""
+        # Section 13: If contractor only provides square footage
+        if "square_footage" in newly_updated and not state.trades and not state.drawing_sheets:
+            response = (
+                f"Thanks! The {state.square_footage} size gives me a starting point, but estimating effort also depends heavily "
+                "on the project type, number of trades, drawing count, and specifications. "
+                "If you tell me which trades you need and approximately how many drawing sheets you have, "
+                "I can give you a better ballpark."
+            )
+            quick_replies = ["Electrical & Plumbing", "All MEP Trades", "Drywall / Framing", "Full General Scope"]
+            return response, quick_replies, "smart_followup"
+
         acknowledgments = []
         if "trades" in newly_updated:
             acknowledgments.append(f"trades ({', '.join(state.trades)})")
@@ -595,7 +772,7 @@ class EstimatorChatbot:
             )
 
         # 7. Change Orders / Claims / Bulletins / Disputes
-        if any(k in txt for k in ["change order", "rfi", "bulletin", "asi", "scope creep", "dispute", "claim", "extra work", "addendum", "addenda"]):
+        if not any(header in txt for header in ["project:", "size:", "drawings:"]) and any(k in txt for k in ["change order", "rfi", "bulletin", "asi", "scope creep", "dispute", "claim", "extra work"]):
             return (
                 "**Change Orders & Addenda Estimating**:\n\n"
                 "We specialize in change order quantification and dispute resolution support. "
@@ -619,8 +796,8 @@ class EstimatorChatbot:
                 "We organize line items into clear hard-cost categories and can structure milestone draw schedules aligned with project phases."
             )
 
-        # 10. Square Foot Benchmarks / ROM / Ballpark Costs
-        if any(k in txt for k in ["square foot cost", "cost per sq ft", "cost per square foot", "sq ft price", "ballpark", "rule of thumb"]):
+        # 10. Square Foot Benchmarks / ROM Costs
+        if any(k in txt for k in ["square foot cost", "cost per sq ft", "cost per square foot", "sq ft price", "rule of thumb"]):
             return (
                 "**Square Foot Pricing & Conceptual Benchmarks**:\n\n"
                 "While historical benchmarks provide a rough order of magnitude (ROM), actual construction costs depend heavily on structural framing, site conditions, finishes, and MEP design. "

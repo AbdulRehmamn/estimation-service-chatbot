@@ -253,17 +253,25 @@ def test_tools_response():
 
 def test_company_location_response():
     """Verify that asking where the company is located returns Edison NJ, California, NY, and nationwide."""
+    exact_expected = "Our head office is in New Jersey at 15 York Drive, Edison, but we got regional locations as well in California and New York. Actually, we work nationwide across all 50 states."
     queries = [
         "where are you located",
         "where is your office located?",
         "what is your address?",
-        "where are you guys based?"
+        "where are you guys based?",
+        "where your headoffice is",
+        "where you based off",
+        "where is your head office",
+        "where are you based off",
+        "where is your headoffice?"
     ]
     for q in queries:
         state = ConversationState("sess_loc")
         res = chatbot.process_message(q, state)
         resp = res["response"]
-        assert "15 York Drive" in resp or "Edison" in resp
+        assert exact_expected in resp
+        assert "15 York Drive" in resp
+        assert "Edison" in resp
         assert "New Jersey" in resp
         assert "California" in resp
         assert "New York" in resp
@@ -314,6 +322,103 @@ def test_faq_queries():
     res = chatbot.process_message("What format do you deliver the estimate in?", state)
     resp = res["response"]
     assert "excel" in resp.lower() or "pdf" in resp.lower()
+
+
+def test_ballpark_calculator_math():
+    """Verify Section 1-5 math for 16, 20, 40, 60, 80, 100, 120 hours."""
+    from ballpark_calculator import calculate_ballpark
+    # 16 hours
+    b16 = calculate_ballpark(16)
+    assert b16["low"] == 400 and b16["high"] == 480
+    # 20 hours
+    b20 = calculate_ballpark(20)
+    assert b20["low"] == 500 and b20["high"] == 600
+    # 40 hours
+    b40 = calculate_ballpark(40)
+    assert b40["low"] == 1000 and b40["high"] == 1200
+    # 60 hours
+    b60 = calculate_ballpark(60)
+    assert b60["low"] == 1500 and b60["high"] == 1800
+    # 80 hours
+    b80 = calculate_ballpark(80)
+    assert b80["low"] == 2000 and b80["high"] == 2400
+    # 100 hours
+    b100 = calculate_ballpark(100)
+    assert b100["low"] == 2500 and b100["high"] == 3000
+    # 120 hours
+    b120 = calculate_ballpark(120)
+    assert b120["low"] == 3000 and b120["high"] == 3600
+
+
+def test_hourly_rate_inquiry():
+    """Verify Section 1: Hourly rate response is $25-$30/hour."""
+    queries = ["What is your hourly rate?", "what's your hourly rate?", "how much per hour"]
+    for q in queries:
+        state = ConversationState("sess_hourly")
+        res = chatbot.process_message(q, state)
+        assert "$25" in res["response"] and "$30" in res["response"]
+        assert "per hour" in res["response"]
+
+
+def test_construction_cost_vs_estimating_fee_distinction():
+    """Verify Section 16: Clarify construction cost vs estimating fee."""
+    queries = [
+        "How much will my 50,000 SF building cost?",
+        "What will it cost to build a 20,000 sq ft warehouse?",
+        "How much does it cost to build?"
+    ]
+    for q in queries:
+        state = ConversationState("sess_cost_dist")
+        res = chatbot.process_message(q, state)
+        assert "estimated construction cost" in res["response"]
+        assert "fee for our estimating service" in res["response"]
+
+
+def test_ballpark_incomplete_and_sqft_only():
+    """Verify Section 12 & 13: Incomplete info and square footage only."""
+    # Section 12: Incomplete info
+    state1 = ConversationState("sess_incomp")
+    res1 = chatbot.process_message("Can you give me a ballpark price?", state1)
+    assert "$25" in res1["response"] and "$30/hour" in res1["response"]
+    assert "drawing count" in res1["response"]
+
+    # Section 13: Only square footage
+    state2 = ConversationState("sess_sqft_only")
+    res2 = chatbot.process_message("It is a 50,000 SF building.", state2)
+    assert "starting point" in res2["response"]
+    assert "50,000 SF" in res2["response"]
+    assert "drawing sheets" in res2["response"]
+
+
+def test_ballpark_benchmark_scenarios():
+    """Verify Section 11 & 14 benchmark examples."""
+    # Example 1: 10,000 SF Drywall
+    s1 = ConversationState("sess_drywall")
+    res1 = chatbot.process_message("I need a drywall takeoff for a small 10,000 SF project. Can you give me a ballpark?", s1)
+    assert "12–16 working hours" in res1["response"] or "12-16" in res1["response"]
+    assert "$300–$480" in res1["response"] or "$300-$480" in res1["response"]
+
+    # Example 2: 40,000 SF Commercial Electrical + Plumbing
+    s2 = ConversationState("sess_comm_ep")
+    res2 = chatbot.process_message("I have a 40,000 SF commercial project and need electrical and plumbing estimates.", s2)
+    assert "24–32 working hours" in res2["response"] or "24-32" in res2["response"]
+    assert "$600–$960" in res2["response"] or "$600-$960" in res2["response"]
+
+    # Example 3: 150,000 SF Commercial All MEP
+    s3 = ConversationState("sess_comm_mep")
+    res3 = chatbot.process_message("I have a 150,000 SF commercial building with all MEP trades. How much?", s3)
+    assert "80–120 working hours" in res3["response"] or "80-120" in res3["response"]
+    assert "$2,000–$3,600" in res3["response"] or "$2,000-$3,600" in res3["response"]
+    assert "10–15 working days" in res3["response"]
+
+    # Example 4: Multi-detail warehouse with 180 sheets and 700 pages specs (Section 14)
+    s4 = ConversationState("sess_warehouse_specs")
+    msg4 = "Project: Commercial warehouse, Size: 100,000 SF, Drawings: 180 sheets, Specifications: 700 pages, Trades: Electrical + HVAC + Plumbing, Addenda: 2"
+    res4 = chatbot.process_message(msg4, s4)
+    assert "60–80 working hours" in res4["response"] or "60-80" in res4["response"]
+    assert "$1,500–$2,400" in res4["response"] or "$1,500-$2,400" in res4["response"]
+    assert "7–10 working days" in res4["response"]
+
 
 
 

@@ -11,7 +11,9 @@
   "pricing": {
     "standard_response": "Our pricing depends on the complexity, size, scope, and requirements of the project. If you can share the set of plans/drawings with us, our team can review the project scope and provide you with a proposal for our estimating services.",
     "plan_request": "Do you have the plans available? You can share the PDF/set of drawings with us for review.",
-    "pricing_rules": "Never invent a fixed dollar amount without reviewing plans and specifications."
+    "pricing_rules": "Never invent a fixed dollar amount without reviewing plans and specifications.",
+    "hourly_rate": "$25–$30 per hour",
+    "hourly_rate_response": "Our estimating services typically range from $25–$30 per hour. The total cost depends on the project's size, complexity, number of drawings, trades, specifications, and scope."
   },
   "turnaround": {
     "standard": "2–3 business days",

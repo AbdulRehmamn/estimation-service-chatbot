@@ -5,6 +5,7 @@ Flask application serving chat interface, plan upload handlers, and lead managem
 
 import os
 import time
+import threading
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 
@@ -134,11 +135,14 @@ def upload_file_endpoint():
         lead_record = lead_manager.save_lead(state)
         lead_summary = lead_record.get("summary_text")
 
-    # Send instant email notification to seanray836@gmail.com
-    try:
-        email_notifier.notify_plan_upload(saved_files, state.to_dict())
-    except Exception as e:
-        print(f"[Upload] Notice: Email notification skipped: {e}")
+    # Send instant email notification to seanray836@gmail.com in background thread so upload completes instantly
+    def _async_notify(files_data, state_data):
+        try:
+            email_notifier.notify_plan_upload(files_data, state_data)
+        except Exception as e:
+            print(f"[Upload] Notice: Email notification skipped: {e}")
+
+    threading.Thread(target=_async_notify, args=(list(saved_files), state.to_dict()), daemon=True).start()
 
     state.add_message("bot", response_text, {
         "action_type": "file_upload",

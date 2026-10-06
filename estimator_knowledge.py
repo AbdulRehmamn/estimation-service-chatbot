@@ -70,6 +70,13 @@ class EstimatorKnowledgeBase:
         )
 
     @property
+    def hourly_rate_response(self) -> str:
+        return self._kb_data.get("pricing", {}).get(
+            "hourly_rate_response",
+            "Our estimating services typically range from $25–$30 per hour. The total cost depends on the project's size, complexity, number of drawings, trades, specifications, and scope."
+        )
+
+    @property
     def turnaround_response(self) -> str:
         return self._kb_data.get("turnaround", {}).get(
             "standard_response",
