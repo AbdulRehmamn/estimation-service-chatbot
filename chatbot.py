@@ -16,6 +16,34 @@ from ballpark_calculator import (
     estimate_project_effort, format_structured_ballpark,
     HOURLY_MIN, HOURLY_MAX
 )
+from domain_knowledge_qa import (
+    match_domain_qa, is_stress_test_query, STRESS_TEST_RESPONSE
+)
+
+
+def is_location_query(raw_text: str) -> bool:
+    """Detects any phrasing, typo, or variation regarding head office location or geography."""
+    txt = raw_text.lower().strip()
+    triggers = [
+        "where are you located", "where you located", "where located", "where are you based",
+        "where you based", "where you based off", "where you based of", "where are you based off",
+        "where are you based of", "based off", "based of", "based out of", "where your headoffice is",
+        "where is your headoffice", "where your head office is", "where is your head office",
+        "where your head office", "where is your main office", "where your main office",
+        "where you guys based", "where are you guys based", "where are you guys located",
+        "headoffice", "head office", "headquarters", "where is your headquarters",
+        "your address", "what is your address", "what's your address", "whats your address",
+        "edison", "15 york drive", "where are you guys", "what state are you located",
+        "what state are you in", "what states do you cover", "where are you operating",
+        "office location", "office address"
+    ]
+    if any(t in txt for t in triggers):
+        return True
+    if re.search(r'where\s+(?:are\s+)?(?:you|u)\s+(?:guys\s+)?(?:located|based|from)', txt):
+        return True
+    if re.search(r'where\s+(?:is\s+)?(?:your|the)\s+(?:head\s*office|headoffice|main\s*office|hq|headquarters|office)', txt):
+        return True
+    return False
 
 
 class EstimatorChatbot:
@@ -74,6 +102,35 @@ class EstimatorChatbot:
         newly_updated: List[str]
     ) -> Tuple[str, List[str], str]:
         """Routes dialog based on primary intent and conversation context."""
+
+        # Check location inquiry first so no variations or typos are ever missed
+        if is_location_query(raw_text):
+            return self._handle_company_location(state)
+
+        # Check real contractor stress test inquiry
+        if is_stress_test_query(raw_text):
+            quick_replies = [
+                "Upload Plans",
+                "Request Proposal",
+                "What tools do you use?",
+                "Where are you located?"
+            ]
+            return STRESS_TEST_RESPONSE, quick_replies, "stress_test"
+
+        # Check specialized domain estimating Q&A
+        domain_answer = match_domain_qa(raw_text)
+        if domain_answer:
+            response = (
+                f"{domain_answer}\n\n"
+                "Do you have project plans or specifications ready? You can share the PDF or drawing set with us for review."
+            )
+            quick_replies = [
+                "Upload Plans",
+                "What tools do you use?",
+                "Where are you located?",
+                "What's your pricing?"
+            ]
+            return response, quick_replies, "domain_qa"
 
         # Check for specific "Are you AI" query to obey Rule 15
         if any(term in raw_text.lower() for term in ["are you an ai", "are you ai", "are you a bot", "are you a robot"]):

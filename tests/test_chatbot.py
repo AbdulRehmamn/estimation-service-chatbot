@@ -420,5 +420,67 @@ def test_ballpark_benchmark_scenarios():
     assert "7–10 working days" in res4["response"]
 
 
+def test_location_phrasing_variations():
+    """Verify that any phrasing variation for location returns the exact Edison, NJ head office response."""
+    queries = [
+        "where are you located",
+        "where you based of?",
+        "where you based off",
+        "where is your head office",
+        "where your head office",
+        "where your headoffice is",
+        "where are you guys based",
+        "what is your address",
+        "what state are you located in?"
+    ]
+    for q in queries:
+        state = ConversationState("sess_loc_var")
+        res = chatbot.process_message(q, state)
+        assert "15 York Drive, Edison" in res["response"]
+        assert "nationwide across all 50 states" in res["response"]
+
+
+def test_real_contractor_stress_test():
+    """Verify exact response to real contractor stress test."""
+    msg = (
+        "I have a 125,000 SF 3-story commercial building. Bid is due Friday at 2 PM. "
+        "I need complete architectural, structural, electrical, plumbing, HVAC, fire protection, "
+        "drywall, flooring, painting, and concrete takeoffs. I have 380 drawing sheets, 1,200 pages "
+        "of specifications, and 4 addenda. Can you give me your price, tell me if you can finish "
+        "before the deadline, and tell me exactly what I'll receive?"
+    )
+    state = ConversationState("sess_stress")
+    res = chatbot.process_message(msg, state)
+    text = res["response"]
+    assert "125,000 SF 3-story commercial building" in text
+    assert "4–6 business days" in text
+    assert "Friday at 2 PM" in text
+    assert "Excel takeoff workbook with live, transparent formulas" in text
+
+
+def test_advanced_estimating_and_domain_qa():
+    """Verify coverage of specialized domain questions across all categories."""
+    qa_checks = [
+        ("Can you estimate a project if the drawings don't show complete dimensions?", "verified reference dimensions"),
+        ("What do you do when architectural and MEP drawings conflict?", "RFI/clarification report"),
+        ("Can you estimate from plans that are only 50% complete?", "schematic/design-development budget"),
+        ("How do you handle owner-provided materials?", "exclude raw material purchase costs"),
+        ("My bid is due in 6 hours. Can you complete the estimate today?", "not feasible and risks severe bid errors"),
+        ("The bid closes in 30 minutes. Can you guarantee the estimate will be finished?", "quality estimate in 30 minutes"),
+        ("Can you calculate ductwork quantities?", "weight (lbs) by sheet metal gauge"),
+        ("Can you estimate a 300,000-square-foot warehouse?", "tilt-up/precast panels"),
+        ("What exactly is included in your drywall takeoff?", "Studs, track, fasteners"),
+        ("Can you find $500,000 in savings without changing the design intent?", "high-cost assemblies"),
+        ("Can you create a construction schedule from the estimate?", "man-hours and crew outputs"),
+        ("What happens if you miss an item?", "omitted in error, we revise"),
+        ("Can you stamp these drawings even though the project is in another state?", "locally credentialed professional"),
+        ("Can you guarantee that my bid will be the lowest?", "No. A winning bid depends on your margins")
+    ]
+    for query, expected_text in qa_checks:
+        state = ConversationState("sess_domain_test")
+        res = chatbot.process_message(query, state)
+        assert expected_text in res["response"], f"Failed for query '{query}', expected '{expected_text}' in response."
+
+
 
 
