@@ -1,0 +1,100 @@
+{
+  "services": [
+    {
+      "code": "EST-01",
+      "name": "Comprehensive Cost Estimating",
+      "category": "Estimating",
+      "description": "Full-scope construction estimating including material quantities, labor rates, equipment pricing, general conditions, and subcontractor scopes.",
+      "ideal_for": ["General Contractors", "Commercial Builders", "Developers"],
+      "typical_turnaround": "2-3 business days",
+      "deliverables": [
+        "Excel Estimate Workbook (.xlsx)",
+        "Color-coded plan takeoff marks (.pdf)",
+        "CSI 16 / 48 Division cost breakdown summary"
+      ]
+    },
+    {
+      "code": "EST-02",
+      "name": "Trade-Specific Quantity Takeoffs",
+      "category": "Takeoffs",
+      "description": "Precise measurement counts for trade subcontractors: Drywall, Framing, Roofing, Painting, Concrete, Masonry, MEP, and Flooring.",
+      "ideal_for": ["Subcontractors", "Material Suppliers", "Installers"],
+      "typical_turnaround": "24-48 hours",
+      "deliverables": [
+        "Digital marked-up drawing set",
+        "Itemized Bill of Materials with scrap/waste allowances"
+      ]
+    },
+    {
+      "code": "EST-03",
+      "name": "MEP Estimating (Mechanical, Electrical, Plumbing)",
+      "category": "MEP",
+      "description": "Specialized MEP estimating covering HVAC equipment, ductwork, piping, electrical fixtures, switchgear, panels, conduit, wire, plumbing fixtures, and fire protection.",
+      "ideal_for": ["MEP Contractors", "Design-Build Teams"],
+      "typical_turnaround": "2-3 business days",
+      "deliverables": [
+        "Detailed fixture and equipment count schedules",
+        "Linear footages of pipe and conduit with fittings",
+        "Labor hours and crew installation rates"
+      ]
+    },
+    {
+      "code": "EST-04",
+      "name": "Preliminary & Conceptual Budgets",
+      "category": "Budgeting",
+      "description": "Early-stage cost modeling for owners, architects, and developers based on schematic drawings or square-foot benchmarks.",
+      "ideal_for": ["Architects", "Real Estate Developers", "Owners"],
+      "typical_turnaround": "2-3 business days",
+      "deliverables": [
+        "Conceptual cost range report",
+        "Square footage cost breakdown comparison"
+      ]
+    },
+    {
+      "code": "EST-05",
+      "name": "Value Engineering & Cost Optimization",
+      "category": "Engineering",
+      "description": "Systematic review of design specs and materials to provide cost-effective alternatives and reduce overall budget while maintaining design intent.",
+      "ideal_for": ["General Contractors", "Project Owners"],
+      "typical_turnaround": "3-4 business days",
+      "deliverables": [
+        "VE Alternative Options Matrix",
+        "Life-cycle and direct savings calculations"
+      ]
+    },
+    {
+      "code": "EST-06",
+      "name": "CPM Construction Scheduling",
+      "category": "Scheduling",
+      "description": "Primavera P6 or Microsoft Project scheduling with critical path analysis, milestone schedules, and trade sequencing.",
+      "ideal_for": ["Project Managers", "General Contractors"],
+      "typical_turnaround": "3-5 business days",
+      "deliverables": [
+        "Gantt Chart PDF & Native File (.mpp / .xer)",
+        "Milestone tracking and critical path report"
+      ]
+    },
+    {
+      "code": "EST-07",
+      "name": "CAD Drafting & Plan Preparation",
+      "category": "Drafting",
+      "description": "Construction drafting support including 2D CAD drafting, shop drawings, redline updates, and permit drawings.",
+      "ideal_for": ["Subcontractors", "Fabricators", "Builders"],
+      "typical_turnaround": "3-5 business days",
+      "deliverables": [
+        "AutoCAD .dwg files and vector .pdf drawing packages"
+      ]
+    },
+    {
+      "code": "EST-08",
+      "name": "Stamping & Engineering Coordination",
+      "category": "Engineering",
+      "description": "Coordination with licensed Professional Engineers (PE) and Structural Engineers (SE) for jurisdiction-specific plan stamping.",
+      "ideal_for": ["Permit Submissions", "Structural Alterations"],
+      "typical_turnaround": "Dependent on jurisdiction and review scope",
+      "deliverables": [
+        "Sealed/stamped engineering calculations and drawings"
+      ]
+    }
+  ]
+}

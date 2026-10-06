@@ -1,0 +1,225 @@
+{
+  "company": {
+    "name": "Estimation Service Chat Bot",
+    "tagline": "Precision Cost Estimates, Detailed Takeoffs & Construction Planning",
+    "phone": "640-274-4522",
+    "email": "seanray836@gmail.com",
+    "website": "www.apexestimates.com",
+    "office_hours": "Monday - Friday: 8:00 AM - 6:00 PM EST",
+    "description": "Professional construction cost estimating, material takeoffs, and project planning services for general contractors, subcontractors, builders, developers, and architects across residential, commercial, civil, and industrial sectors."
+  },
+  "pricing": {
+    "standard_response": "Our pricing depends on the complexity, size, scope, and requirements of the project. If you can share the set of plans/drawings with us, our team can review the project scope and provide you with a proposal for our estimating services.",
+    "plan_request": "Do you have the plans available? You can share the PDF/set of drawings with us for review.",
+    "pricing_rules": "Never invent a fixed dollar amount without reviewing plans and specifications."
+  },
+  "turnaround": {
+    "standard": "2–3 business days",
+    "standard_response": "Our standard turnaround time is approximately 2–3 business days, depending on the size, complexity, number of drawings, and scope of the project.",
+    "large_project_note": "For large, multifaceted, or highly detailed projects, our team will confirm the exact turnaround timeline immediately upon reviewing your plan set. We always prioritize meeting your bid deadlines.",
+    "expedited_available": true
+  },
+  "core_services": [
+    {
+      "id": "cost_estimating",
+      "name": "Construction Cost Estimating",
+      "summary": "Comprehensive, trade-by-trade cost estimation including quantity takeoffs, labor, material, and equipment pricing.",
+      "deliverables": [
+        "Quantity takeoffs and material counts",
+        "Labor quantities and hourly rates",
+        "Material unit costs and equipment allowances",
+        "Subcontractor cost allocations",
+        "Trade-by-trade and CSI MasterFormat cost breakdown",
+        "Bid estimates, budget estimates, and preliminary figures",
+        "Addenda and scope review"
+      ]
+    },
+    {
+      "id": "quantity_takeoff",
+      "name": "Quantity & Material Takeoffs",
+      "summary": "Precise digital quantity takeoffs highlighting linear, square, and cubic footages, counts, and itemized material schedules.",
+      "deliverables": [
+        "Color-coded marked-up plan drawings",
+        "Itemized bill of materials in Excel format",
+        "Waste percentage factors included",
+        "Clear CSI division categorization"
+      ]
+    },
+    {
+      "id": "labor_estimating",
+      "name": "Labor & Man-Hour Estimates",
+      "summary": "Detailed labor productivity analysis, crew sizing, and prevailing or open-shop wage calculations based on project location.",
+      "deliverables": [
+        "Man-hour breakdowns per trade task",
+        "Crew composition recommendations",
+        "Location-adjusted wage rates (union / open shop)"
+      ]
+    },
+    {
+      "id": "change_order_estimating",
+      "name": "Change Order & Scope Review",
+      "summary": "Accurate pricing for project revisions, additions, or deductions during active construction.",
+      "deliverables": [
+        "Comparative takeoff between original and revised sheets",
+        "Substantiated cost variance documentation for client or owner approval"
+      ]
+    }
+  ],
+  "additional_services": {
+    "drafting": {
+      "name": "Drafting Services",
+      "description": "We assist with construction-related CAD drafting, shop drawing preparation, and plan revisions based on specific project requirements.",
+      "deliverables": "2D/3D CAD drawings, as-builts, shop drawings, and detailing."
+    },
+    "stamping": {
+      "name": "Stamp / Engineering Coordination",
+      "description": "Stamping requirements depend on the project location and applicable regulations. We can help coordinate the appropriate licensed professional where required.",
+      "disclaimer": "We coordinate with licensed professional engineers (PE/SE) and architects licensed in the project jurisdiction; we do not claim direct in-house legal stamping authority across every state/country."
+    },
+    "scheduling": {
+      "name": "Construction Scheduling",
+      "description": "We develop professional CPM (Critical Path Method) construction schedules, activity sequencing, and milestone tracking.",
+      "deliverables": [
+        "Gantt charts and critical path identification",
+        "Activity sequencing and milestone planning",
+        "Trade coordination schedules",
+        "Work breakdown structures (WBS)",
+        "Schedule updates and progress reports"
+      ]
+    },
+    "value_engineering": {
+      "name": "Value Engineering (VE)",
+      "description": "We identify strategic cost-saving opportunities by optimizing materials, reviewing alternative assemblies, and improving constructability without sacrificing design integrity.",
+      "details": "Our recommendations depend on the project's drawings, specifications, budget, and local market pricing."
+    }
+  },
+  "trades": {
+    "general_construction": [
+      "General Construction",
+      "General Conditions",
+      "Site Work",
+      "Demolition",
+      "Earthwork",
+      "Excavation",
+      "Concrete",
+      "Masonry",
+      "Structural Work",
+      "Steel Framing"
+    ],
+    "architectural": [
+      "Drywall",
+      "Framing (Wood & Metal Stud)",
+      "Insulation",
+      "Roofing",
+      "Siding",
+      "Doors & Hardware",
+      "Windows & Storefronts",
+      "Glazing",
+      "Painting & Coatings",
+      "Finishes",
+      "Flooring (Carpet, Vinyl, Hardwood)",
+      "Tile & Stone",
+      "Millwork & Trim",
+      "Casework & Cabinetry",
+      "Acoustical Ceilings (ACT)"
+    ],
+    "mep": [
+      "Mechanical",
+      "HVAC (Heating, Ventilation & Air Conditioning)",
+      "Ductwork & Piping",
+      "Plumbing",
+      "Electrical",
+      "Low Voltage & Data",
+      "Fire Protection / Sprinklers",
+      "Controls & Automation"
+    ],
+    "civil_exterior": [
+      "Civil & Site Work",
+      "Landscaping & Irrigation",
+      "Paving & Asphalt",
+      "Concrete Flatwork",
+      "Underground Utilities",
+      "Excavation & Grading",
+      "Stormwater & Drainage",
+      "Retaining Walls"
+    ],
+    "unlisted_trade_response": "We handle a wide range of construction trades. If you send us the plans or tell me the specific scope, I can help determine whether it can be included in the estimate."
+  },
+  "project_types": [
+    "Residential (Single-family, Custom homes)",
+    "Commercial (Offices, Retail, Banks, Mixed-use)",
+    "Multifamily (Apartments, Condominiums, Townhomes)",
+    "Restaurants & Hospitality (Hotels, Cafes, Bars)",
+    "Industrial & Warehouses (Distribution centers, Manufacturing)",
+    "Healthcare (Clinics, Medical offices, Hospitals)",
+    "Educational (Schools, Universities, Daycares)",
+    "Institutional (Community centers, Municipal buildings)",
+    "Renovations & Remodels",
+    "Tenant Improvements (TI / Build-outs)",
+    "New Construction",
+    "Additions & Expansions",
+    "Civil & Infrastructure Projects"
+  ],
+  "estimate_types": {
+    "preliminary": {
+      "name": "Preliminary Estimate",
+      "description": "Prepared during early conceptual design and schematic phases to establish high-level project feasibility."
+    },
+    "budget": {
+      "name": "Budget Estimate",
+      "description": "Used to establish an expected cost framework or financing benchmark before final construction drawings are finalized."
+    },
+    "detailed": {
+      "name": "Detailed Cost Estimate",
+      "description": "Full, line-by-line takeoff covering every material, labor crew hour, equipment cost, and trade category according to complete drawings."
+    },
+    "bid": {
+      "name": "Bid Estimate",
+      "description": "Tailored for general contractors and subcontractors to submit competitive, accurate bids before the bid submission deadline."
+    },
+    "quantity_takeoff": {
+      "name": "Quantity Takeoff (QTO)",
+      "description": "Focused purely on itemized material counts, surface areas, and linear dimensions without dollar amounts or labor rates."
+    },
+    "material_takeoff": {
+      "name": "Material Takeoff",
+      "description": "Detailed schedule of raw materials required for procurement and supplier quotes."
+    },
+    "labor_estimate": {
+      "name": "Labor Estimate",
+      "description": "Calculates craft worker labor hours, production rates, and total labor costs for specific trades."
+    },
+    "change_order": {
+      "name": "Change Order Estimate",
+      "description": "Quantifies and prices scope additions or modifications during active job execution."
+    }
+  },
+  "supported_formats": [
+    "PDF (.pdf)",
+    "AutoCAD DWG / DXF (.dwg, .dxf)",
+    "BIM / Revit exports",
+    "Specification booklets (CSI MasterFormat)",
+    "Excel schedules (.xlsx, .csv)",
+    "Scanned blueprint packages / ZIP archives"
+  ],
+  "human_handoff": {
+    "default_response": "That's something our estimating team should review directly. If you can share your plans and project details, our team can review the scope and get back to you with the appropriate proposal.",
+    "contact_prompt": "Would you like to share your contact information (name, company, email, and phone) so our senior estimator can reach out to you directly?"
+  },
+  "tools_and_software": {
+    "response": "We use RSMeans for pricing, and Bluebeam or PlanSwift for takeoffs. We also have a local vendor list—as you know, every area has different labor and material rates."
+  },
+  "locations": {
+    "head_office": "15 York Drive, Edison, NJ",
+    "regional_offices": "California and New York",
+    "coverage": "Nationwide across all 50 states",
+    "response": "Our head office is in New Jersey at 15 York Drive, Edison, but we got regional locations as well in California and New York. Actually, we work nationwide across all 50 states."
+  },
+  "faq": {
+    "accuracy": "Our estimates are built with high precision by combining digital takeoffs in Bluebeam/PlanSwift with zip-code-specific RSMeans databases and local supplier quotes. We verify waste factors, labor crew rates, and CSI MasterFormat divisions to ensure competitive and realistic bids.",
+    "deliverables": "We deliver comprehensive, fully unlocked Excel workbooks (.xlsx) with line-item cost breakdowns along with color-coded, marked-up PDF drawing sets showing every measurement and quantity.",
+    "payment": "We provide a fixed-fee proposal based on your drawing set. Once approved, payment can be processed securely online before the final estimate is delivered.",
+    "csi_divisions": "We estimate all CSI 16 and 48 MasterFormat divisions, covering General Conditions, Site Work, Concrete, Masonry, Metals, Wood & Plastics, Thermal & Moisture, Finishes, MEP (Mechanical, Electrical, Plumbing, Fire Suppression), and Special Construction.",
+    "samples": "Yes, we can provide sample takeoff spreadsheets and marked-up plan sets upon request so you can inspect our level of detail. Share your email and we'll gladly send a sample pack."
+  }
+}

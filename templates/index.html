@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ company.name }} - Professional Construction Estimating Services</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <div class="brand-icon">
+          <i class="fa-solid fa-helmet-safety"></i>
+        </div>
+        <div class="brand-meta">
+          <div class="brand-title">{{ company.name }}</div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="tel:6402744522" class="nav-btn outline-btn nav-phone-link" title="Call Estimating Department">
+          <i class="fa-solid fa-phone"></i>
+          <span>640-274-4522</span>
+        </a>
+        <a href="mailto:seanray836@gmail.com" class="nav-btn outline-btn nav-email-link" title="Email Estimating Department">
+          <i class="fa-solid fa-envelope"></i>
+          <span>seanray836@gmail.com</span>
+        </a>
+        <button class="nav-btn outline-btn" id="uploadModalBtn" title="Upload Project Plans">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>Upload Plans</span>
+        </button>
+        <button class="nav-btn accent-btn" id="proposalModalBtn" title="Request Formal Proposal">
+          <i class="fa-solid fa-file-signature"></i>
+          <span>Request Proposal</span>
+        </button>
+        <button class="nav-icon-btn" id="toggleTrackerBtn" title="Toggle Project Scope Panel">
+          <i class="fa-solid fa-list-check"></i>
+        </button>
+        <button class="nav-icon-btn" id="clearChatBtn" title="Clear Conversation">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-body">
+      <!-- Chat Column -->
+      <section class="chat-column">
+        <!-- Quick Action Prompt Pills -->
+        <div class="quick-pills-bar" id="quickPillsBar">
+          <button class="pill" data-text="How much does an estimate cost?">
+            <i class="fa-solid fa-calculator"></i> Pricing &amp; Rates
+          </button>
+          <button class="pill" data-text="What is your turnaround time?">
+            <i class="fa-solid fa-stopwatch"></i> 2-3 Day Turnaround
+          </button>
+          <button class="pill" data-text="What trades do you estimate?">
+            <i class="fa-solid fa-trowel-bricks"></i> Trades We Cover
+          </button>
+          <button class="pill" data-text="I need an MEP estimate (HVAC, Electrical, Plumbing)">
+            <i class="fa-solid fa-bolt"></i> MEP Takeoffs
+          </button>
+          <button class="pill" data-text="Tell me about value engineering and scheduling">
+            <i class="fa-solid fa-chart-line"></i> Value Engineering
+          </button>
+          <button class="pill" data-text="Do you coordinate PE or structural stamping?">
+            <i class="fa-solid fa-stamp"></i> Stamping Coordination
+          </button>
+        </div>
+
+        <!-- Chat Stream Area -->
+        <div class="chat-stream" id="chatStream">
+          <!-- Initial Welcome Card -->
+          <div class="bot-welcome-card">
+            <div class="welcome-header">
+              <div class="avatar bot-avatar">
+                <i class="fa-solid fa-hard-hat"></i>
+              </div>
+              <div class="welcome-info">
+                <h3>Senior Estimating Specialist</h3>
+                <span class="badge verified-badge"><i class="fa-solid fa-shield-check"></i> Certified Construction Estimator</span>
+              </div>
+            </div>
+            <p class="welcome-desc">
+              Welcome to <strong>{{ company.name }}</strong>! We provide accurate construction cost estimates,
+              material takeoffs, and bid support for General Contractors, Subcontractors, and Builders.
+            </p>
+            <div class="welcome-highlights">
+              <div class="hl-item"><i class="fa-solid fa-clock"></i> <strong>2–3 Days</strong> Standard Delivery</div>
+              <div class="hl-item"><i class="fa-solid fa-layer-group"></i> <strong>All CSI Trades</strong> Architectural &amp; MEP</div>
+              <div class="hl-item"><i class="fa-solid fa-file-pdf"></i> <strong>PDF / DWG / CAD</strong> Plan Review</div>
+            </div>
+            <div class="welcome-prompt">
+              Tell me about your upcoming project or ask a question below to get started:
+            </div>
+          </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator-wrapper" id="typingIndicator" style="display: none;">
+          <div class="avatar bot-avatar-mini">
+            <i class="fa-solid fa-hard-hat"></i>
+          </div>
+          <div class="typing-bubble">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="typing-text">Estimator is reviewing...</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Context Quick Replies -->
+        <div class="context-replies" id="contextReplies"></div>
+
+        <!-- Input Bar -->
+        <div class="chat-input-bar">
+          <input type="file" id="fileUploadInput" multiple style="display: none;" accept=".pdf,.dwg,.dxf,.cad,.xlsx,.xls,.csv,.zip,.png,.jpg,.jpeg">
+          
+          <button type="button" class="tool-btn" id="attachFileBtn" title="Attach PDF or DWG Plans">
+            <i class="fa-solid fa-paperclip"></i>
+          </button>
+
+          <div class="input-wrapper">
+            <textarea id="chatInput" rows="1" placeholder="Describe your project (e.g., 'Commercial electrical estimate for 25,000 sq ft')..." autofocus></textarea>
+          </div>
+
+          <button type="button" class="send-btn" id="sendBtn" title="Send message">
+            <i class="fa-solid fa-arrow-up"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- Sidebar: Project Scope & Lead Progress Tracker -->
+      <aside class="scope-sidebar" id="scopeSidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title">
+            <i class="fa-solid fa-clipboard-list"></i>
+            Project Scope Tracker
+          </div>
+          <span class="scope-counter" id="scopeCounter">0% Ready</span>
+        </div>
+
+        <div class="scope-progress-container">
+          <div class="scope-progress-bar" id="scopeProgressBar" style="width: 0%;"></div>
+        </div>
+
+        <!-- Tracked Fields Card -->
+        <div class="scope-details-card">
+          <div class="scope-row">
+            <span class="label"><i class="fa-solid fa-building"></i> Project Type</span>
+            <span class="val" id="scopeType">Pending</span>
+          </div>
+          <div class="scope-row">
+            <span class="label"><i class="fa-solid fa-ruler-combined"></i> Square Footage</span>
+            <span class="val" id="scopeSize">Pending</span>
+          </div>
+          <div class="scope-row">
+            <span class="label"><i class="fa-solid fa-hammer"></i> Identified Trades</span>
+            <div class="tags-container" id="scopeTrades">
+              <span class="empty-tag">None identified yet</span>
+            </div>
+          </div>
+          <div class="scope-row">
+            <span class="label"><i class="fa-solid fa-map-pin"></i> Location</span>
+            <span class="val" id="scopeLocation">Pending</span>
+          </div>
+          <div class="scope-row">
+            <span class="label"><i class="fa-solid fa-file-lines"></i> Plans &amp; Drawings</span>
+            <span class="val" id="scopePlans">Pending</span>
+          </div>
+          <div class="scope-row">
+            <span class="label"><i class="fa-solid fa-calendar-day"></i> Bid Due Date</span>
+            <span class="val" id="scopeBidDue">Standard (2–3 Days)</span>
+          </div>
+          <div class="scope-row">
+            <span class="label"><i class="fa-solid fa-user-check"></i> Contact Details</span>
+            <span class="val" id="scopeContact">Pending</span>
+          </div>
+        </div>
+
+        <!-- Uploaded Files Section -->
+        <div class="uploaded-files-card">
+          <div class="sub-title">
+            <i class="fa-solid fa-folder-open"></i> Uploaded Project Drawings
+          </div>
+          <ul class="file-list" id="uploadedFilesList">
+            <li class="no-files">No drawing sets attached yet</li>
+          </ul>
+          <button class="upload-drop-btn" id="sidebarUploadBtn">
+            <i class="fa-solid fa-upload"></i> Attach Plan Sheets
+          </button>
+        </div>
+
+        <!-- Lead Qualification Box -->
+        <div class="lead-summary-card">
+          <div class="sub-title">
+            <i class="fa-solid fa-file-contract"></i> Estimating Lead Summary
+          </div>
+          <p class="summary-note">
+            Our team reviews all project inputs to calculate exact takeoffs and deliver guaranteed bid accuracy.
+          </p>
+          <button class="submit-lead-btn" id="openSummaryBtn">
+            <i class="fa-solid fa-eye"></i> View Lead Summary
+          </button>
+        </div>
+
+        <!-- Company Contact Footnote -->
+        <div class="company-contact-box">
+          <div class="contact-item">
+            <i class="fa-solid fa-phone"></i>
+            <span>{{ company.phone }}</span>
+          </div>
+          <div class="contact-item">
+            <i class="fa-solid fa-envelope"></i>
+            <span>{{ company.email }}</span>
+          </div>
+          <div class="contact-item">
+            <i class="fa-solid fa-clock"></i>
+            <span>{{ company.office_hours }}</span>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Modal 1: Plan Upload Dialog -->
+    <div class="modal-overlay" id="uploadModal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-cloud-arrow-up"></i> Upload Project Plans &amp; Drawings</h3>
+          <button class="close-modal-btn" id="closeUploadModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="drop-zone" id="modalDropZone">
+            <i class="fa-solid fa-file-arrow-up drop-icon"></i>
+            <p><strong>Drag &amp; Drop your Drawing Sets here</strong></p>
+            <span class="drop-hint">Supports PDF, DWG, CAD, Excel, ZIP (Up to 500MB &bull; Multiple files supported)</span>
+            <button type="button" class="browse-btn" id="modalBrowseBtn">Browse Files (Select Multiple)</button>
+          </div>
+          <div class="upload-progress-box" id="uploadProgressBox" style="display: none;">
+            <div class="upload-status-text" id="uploadStatusText">Uploading file...</div>
+            <div class="progress-track">
+              <div class="progress-fill" id="uploadProgressFill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 2: Proposal Request & Contact Info -->
+    <div class="modal-overlay" id="proposalModal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-file-signature"></i> Request Estimating Proposal</h3>
+          <button class="close-modal-btn" id="closeProposalModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="leadForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Your Full Name *</label>
+                <input type="text" id="leadName" placeholder="e.g. John Doe" required>
+              </div>
+              <div class="form-group">
+                <label>Company Name</label>
+                <input type="text" id="leadCompany" placeholder="e.g. Apex Contracting LLC">
+              </div>
+              <div class="form-group">
+                <label>Email Address *</label>
+                <input type="email" id="leadEmail" placeholder="e.g. john@contracting.com" required>
+              </div>
+              <div class="form-group">
+                <label>Phone Number *</label>
+                <input type="tel" id="leadPhone" placeholder="e.g. (555) 123-4567" required>
+              </div>
+              <div class="form-group">
+                <label>Project Type</label>
+                <input type="text" id="leadProjType" placeholder="e.g. Commercial Office, Multifamily">
+              </div>
+              <div class="form-group">
+                <label>Approx. Square Footage</label>
+                <input type="text" id="leadSize" placeholder="e.g. 25,000 sq ft">
+              </div>
+              <div class="form-group full-width">
+                <label>Bid Due Date / Deadline</label>
+                <input type="text" id="leadBidDate" placeholder="e.g. Next Friday, Oct 15th">
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="cancel-btn" id="cancelProposalBtn">Cancel</button>
+              <button type="submit" class="submit-btn" id="submitLeadBtn">Submit for Proposal</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 3: Structured Lead Summary View -->
+    <div class="modal-overlay" id="summaryModal" style="display: none;">
+      <div class="modal-content modal-wide">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-file-code"></i> Estimating Lead Summary (Estimator View)</h3>
+          <button class="close-modal-btn" id="closeSummaryModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <pre class="lead-raw-view" id="leadRawView">Loading lead summary...</pre>
+          <div class="modal-footer-actions">
+            <button class="copy-btn" id="copyLeadBtn"><i class="fa-solid fa-copy"></i> Copy Summary</button>
+            <a href="/api/leads/export" class="download-btn"><i class="fa-solid fa-download"></i> Download CSV</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toastNotification" style="display: none;"></div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+</body>
+</html>

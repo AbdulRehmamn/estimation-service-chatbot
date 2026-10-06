@@ -1,0 +1,28 @@
+[
+  {
+    "lead_id": "LEAD-1791273820",
+    "timestamp": "2026-10-06 14:09:49",
+    "session_id": "test_session_lead",
+    "name": "Robert Taylor",
+    "company": "Taylor Builders",
+    "email": "robert@taylorbuilders.com",
+    "phone": "(555) 987-6543",
+    "project_type": "Commercial",
+    "project_location": "N/A",
+    "square_footage": "40,000 sq ft",
+    "construction_stage": "N/A",
+    "trades": [
+      "Electrical",
+      "Plumbing",
+      "HVAC / Mechanical"
+    ],
+    "estimate_type": "N/A",
+    "plans_available": "Yes (PDF)",
+    "drawing_sheets": "N/A",
+    "bid_due_date": "N/A",
+    "special_requirements": [],
+    "uploaded_files": [],
+    "turnaround_required": "2\u20133 business days",
+    "summary_text": "==================================================\nNEW ESTIMATING LEAD\n==================================================\nName: Robert Taylor\nCompany: Taylor Builders\nEmail: robert@taylorbuilders.com\nPhone: (555) 987-6543\n\nProject Type: Commercial\nProject Location: Not provided\nProject Size: 40,000 sq ft\nStage: New Construction / Unspecified\n\nTrades:\n- Electrical\n- Plumbing\n- HVAC / Mechanical\n\nEstimate Type: Detailed Cost Estimate / Bid Estimate\nPlans Available: Yes (PDF)\nDrawing Sheets: To be confirmed upon receipt\nBid Due Date: Standard / Not urgent\n\nAdditional Requirements:\nNone\n\nUploaded Plans / Specs: None\nRequested Turnaround: Standard 2\u20133 Business Days\n=================================================="
+  }
+]
