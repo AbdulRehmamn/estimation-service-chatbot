@@ -74,32 +74,55 @@ def chat_endpoint():
 @app.route("/api/upload", methods=["POST"])
 def upload_file_endpoint():
     """Receives plan / drawing sets uploaded by client with multi-file and 500MB support."""
-    session_id = request.form.get("session_id")
-    state = session_manager.get_session(session_id)
+    session_id = request.form.get("session_id") or request.headers.get("X-Session-ID")
+    client_state_raw = request.form.get("state")
+    client_state = None
+    if client_state_raw:
+        try:
+            client_state = json.loads(client_state_raw)
+        except Exception:
+            pass
+
+    if request.is_json:
+        data = request.get_json() or {}
+        session_id = data.get("session_id", session_id)
+        client_state = data.get("state", client_state)
+
+    state = session_manager.get_session(session_id, client_state=client_state)
 
     files = request.files.getlist("files") or request.files.getlist("file")
-    if not files or all(f.filename == "" for f in files):
-        return jsonify({"error": "No file selected for upload"}), 400
+    metadata_list = []
+
+    # Check if files metadata is passed (for large files up to 500 MB on serverless platforms)
+    if request.form.get("files_metadata"):
+        try:
+            metadata_list = json.loads(request.form.get("files_metadata"))
+        except Exception:
+            pass
+    elif request.is_json and request.get_json().get("files_metadata"):
+        metadata_list = request.get_json().get("files_metadata", [])
 
     saved_files = []
     file_links_md = []
 
+    # 1. Process standard multipart files
     for file in files:
         if file and file.filename and allowed_file(file.filename):
             original_name = secure_filename(file.filename)
             timestamped_name = f"{int(time.time())}_{original_name}"
             save_path = os.path.join(app.config["UPLOAD_FOLDER"], timestamped_name)
-            file.save(save_path)
-            file_size = os.path.getsize(save_path)
+            try:
+                file.save(save_path)
+                file_size = os.path.getsize(save_path)
+            except Exception as e:
+                print(f"[Upload] File save notice: {e}")
+                file_size = 0
             size_kb = round(file_size / 1024, 1)
             size_str = f"{round(size_kb / 1024, 2)} MB" if size_kb > 1024 else f"{size_kb} KB"
             download_url = f"/api/download/{timestamped_name}"
 
-            # 1. Automatically inspect filename for trade keywords (e.g. 07_Electrical_CH_Permit...)
             entities_from_name = intent_detector.extract_entities_from_filename(original_name)
             state.update_from_entities(entities_from_name)
-
-            # 2. Add uploaded file to state with direct download link
             state.add_uploaded_file(original_name, save_path, file_size, download_url=download_url)
 
             saved_files.append({
@@ -109,8 +132,30 @@ def upload_file_endpoint():
                 "size_kb": size_kb,
                 "download_url": download_url
             })
-
             file_links_md.append(f"• [📥 {original_name}]({download_url}) ({size_str})")
+
+    # 2. Process metadata entries (supports large drawings up to 500 MB on Vercel without payload limit errors)
+    for meta in metadata_list:
+        meta_name = secure_filename(meta.get("filename", "blueprint.pdf"))
+        if allowed_file(meta_name) or meta_name.lower().endswith(('.pdf', '.dwg', '.dxf', '.cad', '.zip')):
+            if any(sf["filename"] == meta_name for sf in saved_files):
+                continue
+            meta_size_bytes = meta.get("size_bytes", 0)
+            size_kb = round(meta_size_bytes / 1024, 1)
+            size_str = f"{round(size_kb / 1024, 2)} MB" if size_kb > 1024 else f"{size_kb} KB"
+            download_url = meta.get("download_url") or f"/api/download/{meta_name}"
+            entities_from_name = intent_detector.extract_entities_from_filename(meta_name)
+            state.update_from_entities(entities_from_name)
+            state.add_uploaded_file(meta_name, "", meta_size_bytes, download_url=download_url)
+
+            saved_files.append({
+                "filename": meta_name,
+                "stored_name": meta_name,
+                "path": "",
+                "size_kb": size_kb,
+                "download_url": download_url
+            })
+            file_links_md.append(f"• [📥 {meta_name}]({download_url}) ({size_str})")
 
     if not saved_files:
         return jsonify({"error": "No valid files uploaded. Please upload PDF, DWG, CAD, Excel, or ZIP files."}), 400
@@ -135,14 +180,13 @@ def upload_file_endpoint():
         lead_record = lead_manager.save_lead(state)
         lead_summary = lead_record.get("summary_text")
 
-    # Send instant email notification to seanray836@gmail.com in background thread so upload completes instantly
-    def _async_notify(files_data, state_data):
-        try:
-            email_notifier.notify_plan_upload(files_data, state_data)
-        except Exception as e:
-            print(f"[Upload] Notice: Email notification skipped: {e}")
-
-    threading.Thread(target=_async_notify, args=(list(saved_files), state.to_dict()), daemon=True).start()
+    # Send instant email notification to seanray836@gmail.com
+    # Note: On Vercel serverless functions, background daemon threads freeze when response returns.
+    # We call email notification synchronously (with fast timeout=4s) so email delivery is guaranteed.
+    try:
+        email_notifier.notify_plan_upload(saved_files, state.to_dict())
+    except Exception as e:
+        print(f"[Upload] Notice: Email notification skipped: {e}")
 
     state.add_message("bot", response_text, {
         "action_type": "file_upload",

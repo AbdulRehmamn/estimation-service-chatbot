@@ -78,6 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
     chatStream.scrollTop = chatStream.scrollHeight;
   }
 
+  // Store local object URLs so contractors can download blueprints directly on their PC
+  const localFileUrls = window._localFileUrls || {};
+  window._localFileUrls = localFileUrls;
+
   function formatMarkdown(text) {
     if (!text) return '';
     let parsed = text
@@ -91,7 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/\n/g, '<br>');
 
     // Convert markdown download links: [text](url)
-    parsed = parsed.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" download target="_blank" class="chat-file-link"><i class="fa-solid fa-file-arrow-down"></i> $1</a>');
+    parsed = parsed.replace(/\[(.*?)\]\((.*?)\)/g, (match, label, url) => {
+      let actualUrl = url;
+      for (const fn in localFileUrls) {
+        if (label.includes(fn) || url.includes(fn)) {
+          actualUrl = localFileUrls[fn];
+          break;
+        }
+      }
+      return `<a href="${actualUrl}" download target="_blank" class="chat-file-link"><i class="fa-solid fa-file-arrow-down"></i> ${label}</a>`;
+    });
 
     // Convert bullet points
     parsed = parsed.replace(/• (.*?)(<br>|<\/p>|$)/g, '<li>$1</li>');
@@ -194,8 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
       state.uploaded_files.forEach(f => {
         const li = document.createElement('li');
         const fn = typeof f === 'object' ? (f.filename || 'plan.pdf') : f;
-        const dl = typeof f === 'object' && f.download_url ? f.download_url : `/api/download/${fn}`;
-        li.innerHTML = `<a href="${dl}" download class="sidebar-file-link" title="Click to download ${fn}">
+        const dl = localFileUrls[fn] || (typeof f === 'object' && f.download_url ? f.download_url : `/api/download/${fn}`);
+        li.innerHTML = `<a href="${dl}" download="${fn}" class="sidebar-file-link" title="Click to download ${fn}">
           <i class="fa-solid fa-file-pdf"></i>
           <span class="file-name-text">${fn}</span>
           <i class="fa-solid fa-arrow-down-to-bracket dl-btn-icon"></i>
@@ -310,12 +323,35 @@ document.addEventListener('DOMContentLoaded', () => {
       ? `Uploading ${files[0].name}...`
       : `Uploading ${files.length} project drawing files...`;
 
+    let totalBytes = 0;
+    const metadataList = [];
+    files.forEach(f => {
+      totalBytes += f.size;
+      const blobUrl = URL.createObjectURL(f);
+      localFileUrls[f.name] = blobUrl;
+      metadataList.push({
+        filename: f.name,
+        size_bytes: f.size,
+        download_url: blobUrl
+      });
+    });
+
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const canSendFullFile = isLocal || totalBytes < 4 * 1024 * 1024;
+
     const formData = new FormData();
-    files.forEach(f => formData.append('files', f));
     formData.append('session_id', sessionId);
+    if (currentState) {
+      formData.append('state', JSON.stringify(currentState));
+    }
+    formData.append('files_metadata', JSON.stringify(metadataList));
+
+    if (canSendFullFile) {
+      files.forEach(f => formData.append('files', f));
+    }
 
     try {
-      uploadProgressFill.style.width = '60%';
+      uploadProgressFill.style.width = '65%';
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData

@@ -253,7 +253,7 @@ class EmailNotifier:
                     "Referer": "https://estimation-service-chatbot.vercel.app"
                 }
             )
-            with urllib.request.urlopen(req, timeout=8) as response:
+            with urllib.request.urlopen(req, timeout=5) as response:
                 resp_text = response.read().decode("utf-8")
                 print(f"[EmailNotifier] Webhook response: {resp_text}")
                 success = True
