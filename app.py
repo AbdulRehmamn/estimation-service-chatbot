@@ -4,6 +4,7 @@ Flask application serving chat interface, plan upload handlers, and lead managem
 """
 
 import os
+import json
 import time
 import threading
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory
@@ -20,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # On Vercel, file system is read-only except /tmp
 IS_VERCEL = bool(os.environ.get("VERCEL"))
 UPLOAD_FOLDER = "/tmp/uploads" if IS_VERCEL else os.path.join(BASE_DIR, "uploads")
-ALLOWED_EXTENSIONS = {"pdf", "dwg", "dxf", "cad", "xlsx", "xls", "csv", "zip", "png", "jpg", "jpeg"}
+ALLOWED_EXTENSIONS = {"pdf", "dwg", "dxf", "cad", "xlsx", "xls", "csv", "zip", "png", "jpg", "jpeg", "tif", "tiff"}
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
@@ -28,8 +29,35 @@ app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB limit for large b
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
+def safe_clean_filename(filename: str) -> str:
+    """Sanitizes filename while preserving extension and handling unicode / edge cases."""
+    if not filename:
+        return f"blueprint_{int(time.time())}.pdf"
+
+    base_name = os.path.basename(filename).strip()
+    ext = ""
+    if "." in base_name:
+        ext = "." + base_name.rsplit(".", 1)[1].lower()
+        stem = base_name.rsplit(".", 1)[0]
+    else:
+        stem = base_name
+
+    sec_name = secure_filename(base_name)
+    if sec_name and "." in sec_name:
+        return sec_name
+
+    clean_stem = "".join(c for c in stem if c.isalnum() or c in ("-", "_", " ")).strip()
+    clean_stem = clean_stem.replace(" ", "_")
+    if not clean_stem:
+        clean_stem = f"blueprint_{int(time.time())}"
+
+    return f"{clean_stem}{ext if ext else '.pdf'}"
+
+
 def allowed_file(filename: str) -> bool:
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+    if not filename or "." not in filename:
+        return False
+    return filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route("/")
@@ -91,8 +119,11 @@ def upload_file_endpoint():
     state = session_manager.get_session(session_id, client_state=client_state)
 
     files = request.files.getlist("files") or request.files.getlist("file")
-    metadata_list = []
+    if not files and request.files:
+        for k in request.files:
+            files.extend(request.files.getlist(k))
 
+    metadata_list = []
     # Check if files metadata is passed (for large files up to 500 MB on serverless platforms)
     if request.form.get("files_metadata"):
         try:
@@ -107,36 +138,38 @@ def upload_file_endpoint():
 
     # 1. Process standard multipart files
     for file in files:
-        if file and file.filename and allowed_file(file.filename):
-            original_name = secure_filename(file.filename)
-            timestamped_name = f"{int(time.time())}_{original_name}"
-            save_path = os.path.join(app.config["UPLOAD_FOLDER"], timestamped_name)
-            try:
-                file.save(save_path)
-                file_size = os.path.getsize(save_path)
-            except Exception as e:
-                print(f"[Upload] File save notice: {e}")
-                file_size = 0
-            size_kb = round(file_size / 1024, 1)
-            size_str = f"{round(size_kb / 1024, 2)} MB" if size_kb > 1024 else f"{size_kb} KB"
-            download_url = f"/api/download/{timestamped_name}"
+        if file and file.filename:
+            original_name = safe_clean_filename(file.filename)
+            if allowed_file(original_name):
+                timestamped_name = f"{int(time.time())}_{original_name}"
+                save_path = os.path.join(app.config["UPLOAD_FOLDER"], timestamped_name)
+                try:
+                    file.save(save_path)
+                    file_size = os.path.getsize(save_path)
+                except Exception as e:
+                    print(f"[Upload] File save notice: {e}")
+                    file_size = 0
+                size_kb = round(file_size / 1024, 1)
+                size_str = f"{round(size_kb / 1024, 2)} MB" if size_kb > 1024 else f"{size_kb} KB"
+                download_url = f"/api/download/{timestamped_name}"
 
-            entities_from_name = intent_detector.extract_entities_from_filename(original_name)
-            state.update_from_entities(entities_from_name)
-            state.add_uploaded_file(original_name, save_path, file_size, download_url=download_url)
+                entities_from_name = intent_detector.extract_entities_from_filename(original_name)
+                state.update_from_entities(entities_from_name)
+                state.add_uploaded_file(original_name, save_path, file_size, download_url=download_url)
 
-            saved_files.append({
-                "filename": original_name,
-                "stored_name": timestamped_name,
-                "path": save_path,
-                "size_kb": size_kb,
-                "download_url": download_url
-            })
-            file_links_md.append(f"• [📥 {original_name}]({download_url}) ({size_str})")
+                saved_files.append({
+                    "filename": original_name,
+                    "stored_name": timestamped_name,
+                    "path": save_path,
+                    "size_kb": size_kb,
+                    "download_url": download_url
+                })
+                file_links_md.append(f"• [📥 {original_name}]({download_url}) ({size_str})")
 
     # 2. Process metadata entries (supports large drawings up to 500 MB on Vercel without payload limit errors)
     for meta in metadata_list:
-        meta_name = secure_filename(meta.get("filename", "blueprint.pdf"))
+        raw_meta_name = meta.get("filename", "blueprint.pdf")
+        meta_name = safe_clean_filename(raw_meta_name)
         if allowed_file(meta_name) or meta_name.lower().endswith(('.pdf', '.dwg', '.dxf', '.cad', '.zip')):
             if any(sf["filename"] == meta_name for sf in saved_files):
                 continue
