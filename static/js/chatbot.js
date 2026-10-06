@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentState = null;
 
   // --------------------------------------------------------------------------
-  // Message Sending & Formatting heheheh
+  // Message Sending & Formatting 
   // --------------------------------------------------------------------------
 
   function showToast(message, duration = 3000) {
